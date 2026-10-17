@@ -31,7 +31,7 @@ OVH edge firewall (allow TCP 8080 from 57.129.162.51 only), or:
 sudo iptables -I DOCKER-USER -p tcp --dport 8080 ! -s 57.129.162.51 -j DROP
 ```
 Persist iptables rules across reboots: `sudo apt install -y iptables-persistent && sudo netfilter-persistent save`.
-Allow SSH (22) only as you need it. Only the NGINX VPS needs 80/443.
+Allow your SSH port (53679 on the app VPS) only as you need it. Only the NGINX VPS needs 80/443.
 
 ## 3. NGINX VPS (57.129.162.51)
 First copy `deploy/nginx-bootstrap.conf` and `deploy/markf.dev.conf` from the repo to the server (e.g. `scp deploy/*.conf ubuntu@57.129.162.51:~/`), then:
@@ -59,7 +59,12 @@ The workflow `.github/workflows/deploy.yml` builds the image, pushes it to GHCR,
   - `DEPLOY_HOST` = `57.129.162.53`
   - `DEPLOY_USER` = `ubuntu`
   - `DEPLOY_SSH_KEY` = private key (`ssh-keygen -t ed25519 -f ci_key`; public half goes on the VPS)
-  - `DEPLOY_KNOWN_HOSTS` = output of `ssh-keyscan -t ed25519 57.129.162.53`
+  - `DEPLOY_PORT` = `53679` (the app VPS's SSH port)
+  - `DEPLOY_KNOWN_HOSTS` = the app VPS host key, in the non-standard-port format. Easiest way, run on the app VPS:
+    ```bash
+    echo "[57.129.162.53]:53679 $(cut -d' ' -f1,2 /etc/ssh/ssh_host_ed25519_key.pub)"
+    ```
+    (Windows' built-in `ssh-keyscan` is too old for OpenSSH 10. From WSL or Git Bash, `ssh-keyscan -t ed25519 -p 53679 57.129.162.53` also works.)
 
 ## 5. Database VPS (57.129.162.52)
 PostgreSQL runs in Docker here, separate from the app. Do this **before** the first deploy.
@@ -72,6 +77,7 @@ echo "POSTGRES_PASSWORD=$(openssl rand -base64 32 | tr -d '/+=')" > .env && chmo
 
 # self-signed certificate so app<->db traffic is encrypted (postgres image runs as uid 999)
 openssl req -new -x509 -days 3650 -nodes -subj "/CN=57.129.162.52" \
+  -addext "subjectAltName=IP:57.129.162.52" \
   -keyout certs/server.key -out certs/server.crt
 chmod 600 certs/server.key
 sudo chown 999:999 certs/server.key certs/server.crt   # do this last: ubuntu can't modify the files afterwards
@@ -88,9 +94,13 @@ sudo iptables -I DOCKER-USER -p tcp --dport 5432 ! -s 57.129.162.53 -j DROP
 ```
 Persist the rule: `sudo apt install -y iptables-persistent && sudo netfilter-persistent save`.
 
-The app connects with `SSL Mode=Require; Trust Server Certificate=true`: traffic is encrypted but the server
-certificate isn't verified. To verify it, copy `server.crt` to the app VPS and use `SSL Mode=VerifyFull` with `Root Certificate=`.
-
+The app verifies this certificate (`SSL Mode=VerifyFull`), so it must be copied to the app VPS **before the first deploy**.
+Run this on your PC (adjust the DB VPS SSH port if it isn't 22):
+```bash
+scp -P <db-ssh-port> ubuntu@57.129.162.52:/opt/markfdev-db/certs/server.crt ./db-ca.crt
+scp -P 53679 ./db-ca.crt ubuntu@57.129.162.53:/opt/markfdev/db-ca.crt
+```
+The certificate is valid for 10 years and is tied to the IP `57.129.162.52`. If you regenerate it, copy the new `db-ca.crt` to the app VPS and run `sudo docker compose restart` there.
 ## 6. App behaviour and admin
 - On startup the app applies EF Core migrations, seeds placeholder content if the database is empty, and creates the admin user from `ADMIN_EMAIL` / `ADMIN_PASSWORD` if it doesn't exist. Changing `ADMIN_PASSWORD` later does not change an existing user's password.
 - The app will fail to start if the DB VPS is unreachable. Docker restarts it until the database is available.
@@ -105,5 +115,7 @@ dotnet user-secrets set "Admin:Password" "a-long-dev-password"
 dotnet run
 ```
 New migration: `dotnet ef migrations add <Name>`.
+
+
 
 

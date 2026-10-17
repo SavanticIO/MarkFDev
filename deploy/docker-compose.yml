@@ -3,8 +3,11 @@ services:
     image: ${IMAGE}
     restart: unless-stopped
     environment:
-      ConnectionStrings__Default: Host=57.129.162.52;Port=5432;Database=markfdev;Username=markfdev;Password=${POSTGRES_PASSWORD};SSL Mode=Require;Trust Server Certificate=true
+      ConnectionStrings__Default: Host=57.129.162.52;Port=5432;Database=markfdev;Username=markfdev;Password=${POSTGRES_PASSWORD};SSL Mode=VerifyFull;Root Certificate=/certs/db-ca.crt
       Admin__Email: ${ADMIN_EMAIL}
       Admin__Password: ${ADMIN_PASSWORD}
+    volumes:
+      - /opt/markfdev/db-ca.crt:/certs/db-ca.crt:ro
     ports:
       - "57.129.162.53:8080:8080"
+

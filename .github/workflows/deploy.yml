@@ -48,13 +48,15 @@ jobs:
         env:
           IMAGE: ${{ needs.publish.outputs.image }}:${{ github.sha }}
           TARGET: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+          PORT: ${{ secrets.DEPLOY_PORT }}
         run: |
-          scp deploy/docker-compose.yml "$TARGET:/opt/markfdev/docker-compose.yml"
-          ssh "$TARGET" "cd /opt/markfdev && IMAGE=$IMAGE docker compose pull app && IMAGE=$IMAGE docker compose up -d && docker image prune -f"      - name: Smoke test
+          scp -P "$PORT" deploy/docker-compose.yml "$TARGET:/opt/markfdev/docker-compose.yml"
+          ssh -p "$PORT" "$TARGET" "cd /opt/markfdev && IMAGE=$IMAGE docker compose pull app && IMAGE=$IMAGE docker compose up -d && docker image prune -f"      - name: Smoke test
         run: |
           for i in $(seq 1 15); do
             curl -fsS https://markf.dev/ -o /dev/null && exit 0
             sleep 4
           done
           exit 1
+
 
