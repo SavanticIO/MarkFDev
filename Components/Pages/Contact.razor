@@ -1,0 +1,20 @@
+@page "/contact"
+@inject ProfileService Service
+
+<PageTitle>Contact | @_profile.Name</PageTitle>
+
+<MudText Typo="Typo.h3" HtmlTag="h1" GutterBottom>Contact</MudText>
+<MudText Class="mb-4">I'm always happy to talk about interesting roles and projects.</MudText>
+
+<MudStack Spacing="2" Style="max-width:400px">
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="@($"mailto:{_profile.Email}")" StartIcon="@Icons.Material.Filled.Mail">@_profile.Email</MudButton>
+    <MudButton Variant="Variant.Outlined" Href="@_profile.LinkedInUrl" Target="_blank" StartIcon="@Icons.Custom.Brands.LinkedIn">LinkedIn</MudButton>
+    <MudButton Variant="Variant.Outlined" Href="@_profile.GitHubUrl" Target="_blank" StartIcon="@Icons.Custom.Brands.GitHub">GitHub</MudButton>
+</MudStack>
+
+@code {
+    private SiteProfile _profile = new();
+
+    protected override async Task OnInitializedAsync() => _profile = await Service.GetProfileAsync();
+}
+

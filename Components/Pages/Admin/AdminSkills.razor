@@ -1,0 +1,69 @@
+@page "/admin/skills"
+@attribute [Authorize]
+@inject ProfileService Service
+@inject ISnackbar Snackbar
+@inject IDialogService Dialogs
+
+<PageTitle>Admin | Skills</PageTitle>
+<MudText Typo="Typo.h3" HtmlTag="h1" GutterBottom>Admin</MudText>
+<AdminNav Active="Skills"/>
+
+@if (_edit is not null)
+{
+    <MudPaper Class="pa-4 mb-6" Elevation="2">
+        <EditForm Model="_edit" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator/>
+            <MudGrid>
+                <MudItem xs="12" md="8"><MudTextField @bind-Value="_edit.Name" For="@(() => _edit.Name)" Label="Group name" Variant="Variant.Outlined"/></MudItem>
+                <MudItem xs="12" md="4"><MudNumericField @bind-Value="_edit.SortOrder" Label="Sort order" Variant="Variant.Outlined"/></MudItem>
+                <MudItem xs="12"><MudTextField @bind-Value="_edit.ItemsText" Label="Skills" HelperText="Comma separated" Variant="Variant.Outlined"/></MudItem>
+                <MudItem xs="12">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mr-2">Save</MudButton>
+                    <MudButton OnClick="@(() => _edit = null)">Cancel</MudButton>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </MudPaper>
+}
+else
+{
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Class="mb-4" OnClick="@(() => _edit = new SkillGroup { SortOrder = _items.Count + 1 })">Add skill group</MudButton>
+}
+
+@foreach (var item in _items)
+{
+    <MudPaper Class="pa-3 mb-2 d-flex align-center" Elevation="1">
+        <div class="flex-grow-1">
+            <MudText Typo="Typo.subtitle1">@item.SortOrder. @item.Name</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">@item.ItemsText</MudText>
+        </div>
+        <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => Edit(item))" aria-label="Edit"/>
+        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteAsync(item))" aria-label="Delete"/>
+    </MudPaper>
+}
+
+@code {
+    private List<SkillGroup> _items = [];
+    private SkillGroup? _edit;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync() => _items = await Service.GetSkillsAsync();
+
+    private void Edit(SkillGroup s) => _edit = new SkillGroup { Id = s.Id, Name = s.Name, Items = [.. s.Items], SortOrder = s.SortOrder };
+
+    private async Task SaveAsync()
+    {
+        await Service.SaveAsync(_edit!);
+        _edit = null;
+        await LoadAsync();
+        Snackbar.Add("Saved", Severity.Success);
+    }
+
+    private async Task DeleteAsync(SkillGroup s)
+    {
+        if (await Dialogs.ShowMessageBoxAsync("Delete", $"Delete '{s.Name}'?", yesText: "Delete", cancelText: "Cancel") != true) return;
+        await Service.DeleteAsync<SkillGroup>(s.Id);
+        await LoadAsync();
+    }
+}

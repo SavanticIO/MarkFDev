@@ -1,0 +1,49 @@
+@page "/"
+@inject ProfileService Service
+
+<PageTitle>@_profile.Name | @_profile.Title</PageTitle>
+
+<MudStack Class="py-8" Spacing="3">
+    <MudText Typo="Typo.overline" Color="Color.Primary">Hello, I'm</MudText>
+    <MudText Typo="Typo.h2" HtmlTag="h1">@_profile.Name</MudText>
+    <MudText Typo="Typo.h5" Color="Color.Primary">@_profile.Title</MudText>
+    <MudText Typo="Typo.h6" Class="mud-text-secondary" Style="max-width:700px">@_profile.Tagline</MudText>
+    <MudStack Row Spacing="2" Class="mt-2">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="projects">View projects</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Href="contact">Get in touch</MudButton>
+    </MudStack>
+</MudStack>
+
+<MudGrid Class="mt-4">
+    <MudItem xs="12" md="6">
+        <MudText Typo="Typo.h5" GutterBottom HtmlTag="h2">About</MudText>
+        @foreach (var paragraph in _profile.AboutParagraphs)
+        {
+            <MudText Class="mb-3">@paragraph</MudText>
+        }
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudText Typo="Typo.h5" GutterBottom HtmlTag="h2">Skills</MudText>
+        @foreach (var group in _skills)
+        {
+            <MudText Typo="Typo.subtitle2" Class="mt-2">@group.Name</MudText>
+            <MudChipSet T="string" ReadOnly>
+                @foreach (var s in group.Items)
+                {
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">@s</MudChip>
+                }
+            </MudChipSet>
+        }
+    </MudItem>
+</MudGrid>
+
+@code {
+    private SiteProfile _profile = new();
+    private List<SkillGroup> _skills = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _profile = await Service.GetProfileAsync();
+        _skills = await Service.GetSkillsAsync();
+    }
+}

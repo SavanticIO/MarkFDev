@@ -1,0 +1,46 @@
+@page "/projects"
+@inject ProfileService Service
+
+<PageTitle>Projects | @_profile.Name</PageTitle>
+
+<MudText Typo="Typo.h3" HtmlTag="h1" GutterBottom>Projects</MudText>
+
+<MudGrid>
+    @foreach (var p in _projects)
+    {
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="2" Style="height:100%">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" HtmlTag="h2">@p.Name</MudText>
+                    <MudText Class="my-2">@p.Description</MudText>
+                    @foreach (var t in p.Tech)
+                    {
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">@t</MudChip>
+                    }
+                </MudCardContent>
+                <MudCardActions>
+                    @if (!string.IsNullOrWhiteSpace(p.RepoUrl))
+                    {
+                        <MudButton Href="@p.RepoUrl" Target="_blank" StartIcon="@Icons.Custom.Brands.GitHub">Source</MudButton>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(p.LiveUrl))
+                    {
+                        <MudButton Href="@p.LiveUrl" Target="_blank" StartIcon="@Icons.Material.Filled.OpenInNew">Live</MudButton>
+                    }
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    }
+</MudGrid>
+
+@code {
+    private SiteProfile _profile = new();
+    private List<Project> _projects = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _profile = await Service.GetProfileAsync();
+        _projects = await Service.GetProjectsAsync();
+    }
+}
+

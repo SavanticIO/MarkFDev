@@ -1,0 +1,43 @@
+@page "/experience"
+@inject ProfileService Service
+
+<PageTitle>Experience | @_profile.Name</PageTitle>
+
+<MudText Typo="Typo.h3" HtmlTag="h1" GutterBottom>Experience</MudText>
+
+<MudTimeline TimelineOrientation="TimelineOrientation.Vertical" TimelinePosition="TimelinePosition.Start">
+    @foreach (var job in _jobs)
+    {
+        <MudTimelineItem Color="Color.Primary" Size="Size.Small">
+            <MudCard Elevation="2">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" HtmlTag="h2">@job.Role</MudText>
+                    <MudText Typo="Typo.subtitle2" Color="Color.Primary">@job.Company &middot; @job.Period</MudText>
+                    <MudText Class="my-2">@job.Summary</MudText>
+                    <ul class="ml-6 mb-3">
+                        @foreach (var h in job.Highlights)
+                        {
+                            <li><MudText Typo="Typo.body2">@h</MudText></li>
+                        }
+                    </ul>
+                    @foreach (var t in job.Tech)
+                    {
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@t</MudChip>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudTimelineItem>
+    }
+</MudTimeline>
+
+@code {
+    private SiteProfile _profile = new();
+    private List<Job> _jobs = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _profile = await Service.GetProfileAsync();
+        _jobs = await Service.GetJobsAsync();
+    }
+}
+

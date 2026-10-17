@@ -1,0 +1,77 @@
+@page "/admin/jobs"
+@attribute [Authorize]
+@inject ProfileService Service
+@inject ISnackbar Snackbar
+@inject IDialogService Dialogs
+
+<PageTitle>Admin | Experience</PageTitle>
+<MudText Typo="Typo.h3" HtmlTag="h1" GutterBottom>Admin</MudText>
+<AdminNav Active="Experience"/>
+
+@if (_edit is not null)
+{
+    <MudPaper Class="pa-4 mb-6" Elevation="2">
+        <EditForm Model="_edit" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator/>
+            <MudGrid>
+                <MudItem xs="12" md="6"><MudTextField @bind-Value="_edit.Role" For="@(() => _edit.Role)" Label="Role" Variant="Variant.Outlined"/></MudItem>
+                <MudItem xs="12" md="6"><MudTextField @bind-Value="_edit.Company" For="@(() => _edit.Company)" Label="Company" Variant="Variant.Outlined"/></MudItem>
+                <MudItem xs="12" md="8"><MudTextField @bind-Value="_edit.Period" For="@(() => _edit.Period)" Label="Period" HelperText="e.g. 2022 - Present" Variant="Variant.Outlined"/></MudItem>
+                <MudItem xs="12" md="4"><MudNumericField @bind-Value="_edit.SortOrder" Label="Sort order" HelperText="Lowest first" Variant="Variant.Outlined"/></MudItem>
+                <MudItem xs="12"><MudTextField @bind-Value="_edit.Summary" For="@(() => _edit.Summary)" Label="Summary" Lines="2" Variant="Variant.Outlined"/></MudItem>
+                <MudItem xs="12"><MudTextField @bind-Value="_edit.HighlightsText" Label="Highlights" HelperText="One per line" Lines="5" Variant="Variant.Outlined"/></MudItem>
+                <MudItem xs="12"><MudTextField @bind-Value="_edit.TechText" Label="Technologies" HelperText="Comma separated" Variant="Variant.Outlined"/></MudItem>
+                <MudItem xs="12">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mr-2">Save</MudButton>
+                    <MudButton OnClick="@(() => _edit = null)">Cancel</MudButton>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </MudPaper>
+}
+else
+{
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Class="mb-4" OnClick="@(() => _edit = new Job { SortOrder = _items.Count + 1 })">Add job</MudButton>
+}
+
+@foreach (var item in _items)
+{
+    <MudPaper Class="pa-3 mb-2 d-flex align-center" Elevation="1">
+        <div class="flex-grow-1">
+            <MudText Typo="Typo.subtitle1">@item.SortOrder. @item.Role, @item.Company</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">@item.Period</MudText>
+        </div>
+        <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => Edit(item))" aria-label="Edit"/>
+        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteAsync(item))" aria-label="Delete"/>
+    </MudPaper>
+}
+
+@code {
+    private List<Job> _items = [];
+    private Job? _edit;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync() => _items = await Service.GetJobsAsync();
+
+    private void Edit(Job j) => _edit = new Job
+    {
+        Id = j.Id, Role = j.Role, Company = j.Company, Period = j.Period, Summary = j.Summary,
+        Highlights = [.. j.Highlights], Tech = [.. j.Tech], SortOrder = j.SortOrder
+    };
+
+    private async Task SaveAsync()
+    {
+        await Service.SaveAsync(_edit!);
+        _edit = null;
+        await LoadAsync();
+        Snackbar.Add("Saved", Severity.Success);
+    }
+
+    private async Task DeleteAsync(Job j)
+    {
+        if (await Dialogs.ShowMessageBoxAsync("Delete", $"Delete '{j.Role}, {j.Company}'?", yesText: "Delete", cancelText: "Cancel") != true) return;
+        await Service.DeleteAsync<Job>(j.Id);
+        await LoadAsync();
+    }
+}

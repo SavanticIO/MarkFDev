@@ -1,0 +1,78 @@
+@page "/admin/projects"
+@attribute [Authorize]
+@inject ProfileService Service
+@inject ISnackbar Snackbar
+@inject IDialogService Dialogs
+
+<PageTitle>Admin | Projects</PageTitle>
+<MudText Typo="Typo.h3" HtmlTag="h1" GutterBottom>Admin</MudText>
+<AdminNav Active="Projects"/>
+
+@if (_edit is not null)
+{
+    <MudPaper Class="pa-4 mb-6" Elevation="2">
+        <EditForm Model="_edit" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator/>
+            <MudGrid>
+                <MudItem xs="12" md="8"><MudTextField @bind-Value="_edit.Name" For="@(() => _edit.Name)" Label="Name" Variant="Variant.Outlined"/></MudItem>
+                <MudItem xs="12" md="4"><MudNumericField @bind-Value="_edit.SortOrder" Label="Sort order" HelperText="Lowest first" Variant="Variant.Outlined"/></MudItem>
+                <MudItem xs="12"><MudTextField @bind-Value="_edit.Description" For="@(() => _edit.Description)" Label="Description" Lines="3" Variant="Variant.Outlined"/></MudItem>
+                <MudItem xs="12"><MudTextField @bind-Value="_edit.TechText" Label="Technologies" HelperText="Comma separated" Variant="Variant.Outlined"/></MudItem>
+                <MudItem xs="12" md="6"><MudTextField @bind-Value="_edit.RepoUrl" For="@(() => _edit.RepoUrl)" Label="Source URL" Variant="Variant.Outlined"/></MudItem>
+                <MudItem xs="12" md="6"><MudTextField @bind-Value="_edit.LiveUrl" For="@(() => _edit.LiveUrl)" Label="Live URL" Variant="Variant.Outlined"/></MudItem>
+                <MudItem xs="12">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mr-2">Save</MudButton>
+                    <MudButton OnClick="@(() => _edit = null)">Cancel</MudButton>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </MudPaper>
+}
+else
+{
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Class="mb-4" OnClick="@(() => _edit = new Project { SortOrder = _items.Count + 1 })">Add project</MudButton>
+}
+
+@foreach (var item in _items)
+{
+    <MudPaper Class="pa-3 mb-2 d-flex align-center" Elevation="1">
+        <div class="flex-grow-1">
+            <MudText Typo="Typo.subtitle1">@item.SortOrder. @item.Name</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">@item.TechText</MudText>
+        </div>
+        <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => Edit(item))" aria-label="Edit"/>
+        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteAsync(item))" aria-label="Delete"/>
+    </MudPaper>
+}
+
+@code {
+    private List<Project> _items = [];
+    private Project? _edit;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync() => _items = await Service.GetProjectsAsync();
+
+    private void Edit(Project p) => _edit = new Project
+    {
+        Id = p.Id, Name = p.Name, Description = p.Description, Tech = [.. p.Tech],
+        RepoUrl = p.RepoUrl, LiveUrl = p.LiveUrl, SortOrder = p.SortOrder
+    };
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_edit!.RepoUrl)) _edit.RepoUrl = null;
+        if (string.IsNullOrWhiteSpace(_edit.LiveUrl)) _edit.LiveUrl = null;
+        await Service.SaveAsync(_edit);
+        _edit = null;
+        await LoadAsync();
+        Snackbar.Add("Saved", Severity.Success);
+    }
+
+    private async Task DeleteAsync(Project p)
+    {
+        if (await Dialogs.ShowMessageBoxAsync("Delete", $"Delete '{p.Name}'?", yesText: "Delete", cancelText: "Cancel") != true) return;
+        await Service.DeleteAsync<Project>(p.Id);
+        await LoadAsync();
+    }
+}

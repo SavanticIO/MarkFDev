@@ -1,0 +1,18 @@
+<MudStack Row Spacing="1" Class="mb-6" Style="flex-wrap:wrap">
+    @foreach (var (href, text, icon) in Tabs)
+    {
+        <MudButton Href="@href" StartIcon="@icon" Variant="@(Active == text ? Variant.Filled : Variant.Outlined)" Color="Color.Primary">@text</MudButton>
+    }
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public string Active { get; set; } = "";
+
+    private static readonly (string Href, string Text, string Icon)[] Tabs =
+    [
+        ("admin", "Profile", Icons.Material.Filled.Person),
+        ("admin/skills", "Skills", Icons.Material.Filled.Build),
+        ("admin/jobs", "Experience", Icons.Material.Filled.Work),
+        ("admin/projects", "Projects", Icons.Material.Filled.Code),
+    ];
+}

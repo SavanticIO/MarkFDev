@@ -1,0 +1,43 @@
+@page "/admin"
+@attribute [Authorize]
+@inject ProfileService Service
+@inject NavigationManager Nav
+
+<PageTitle>Admin | Profile</PageTitle>
+<MudText Typo="Typo.h3" HtmlTag="h1" GutterBottom>Admin</MudText>
+<AdminNav Active="Profile"/>
+
+@if (_model is null)
+{
+    <MudProgressCircular Indeterminate/>
+}
+else
+{
+    <EditForm Model="_model" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator/>
+        <MudGrid>
+            <MudItem xs="12" md="6"><MudTextField @bind-Value="_model.Name" For="@(() => _model.Name)" Label="Name" Variant="Variant.Outlined"/></MudItem>
+            <MudItem xs="12" md="6"><MudTextField @bind-Value="_model.Title" For="@(() => _model.Title)" Label="Job title" Variant="Variant.Outlined"/></MudItem>
+            <MudItem xs="12"><MudTextField @bind-Value="_model.Tagline" For="@(() => _model.Tagline)" Label="Tagline" Variant="Variant.Outlined"/></MudItem>
+            <MudItem xs="12" md="6"><MudTextField @bind-Value="_model.Location" For="@(() => _model.Location)" Label="Location" Variant="Variant.Outlined"/></MudItem>
+            <MudItem xs="12" md="6"><MudTextField @bind-Value="_model.Email" For="@(() => _model.Email)" Label="Public email" Variant="Variant.Outlined"/></MudItem>
+            <MudItem xs="12" md="6"><MudTextField @bind-Value="_model.GitHubUrl" For="@(() => _model.GitHubUrl)" Label="GitHub URL" Variant="Variant.Outlined"/></MudItem>
+            <MudItem xs="12" md="6"><MudTextField @bind-Value="_model.LinkedInUrl" For="@(() => _model.LinkedInUrl)" Label="LinkedIn URL" Variant="Variant.Outlined"/></MudItem>
+            <MudItem xs="12"><MudTextField @bind-Value="_model.About" For="@(() => _model.About)" Label="About" HelperText="Separate paragraphs with a blank line" Lines="8" Variant="Variant.Outlined"/></MudItem>
+            <MudItem xs="12"><MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton></MudItem>
+        </MudGrid>
+    </EditForm>
+}
+
+@code {
+    private SiteProfile? _model;
+
+    protected override async Task OnInitializedAsync() => _model = await Service.GetProfileAsync();
+
+    private async Task SaveAsync()
+    {
+        await Service.SaveAsync(_model!);
+        // Reload so the shared layout picks up the new name and links
+        Nav.Refresh(forceReload: true);
+    }
+}

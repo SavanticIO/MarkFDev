@@ -1,0 +1,10 @@
+services:
+  app:
+    image: ${IMAGE}
+    restart: unless-stopped
+    environment:
+      ConnectionStrings__Default: Host=57.129.162.52;Port=5432;Database=markfdev;Username=markfdev;Password=${POSTGRES_PASSWORD};SSL Mode=Require;Trust Server Certificate=true
+      Admin__Email: ${ADMIN_EMAIL}
+      Admin__Password: ${ADMIN_PASSWORD}
+    ports:
+      - "57.129.162.53:8080:8080"

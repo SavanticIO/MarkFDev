@@ -1,0 +1,57 @@
+@page "/login"
+@layout LoginLayout
+@attribute [ExcludeFromInteractiveRouting]
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject NavigationManager Nav
+
+<PageTitle>Sign in</PageTitle>
+
+<h1 style="margin:0 0 24px;font-size:1.5rem">Admin sign in</h1>
+
+<EditForm Model="Input" method="post" OnValidSubmit="SignInAsync" FormName="login">
+    <DataAnnotationsValidator/>
+    <label style="display:block;margin-bottom:4px">Email</label>
+    <InputText @bind-Value="Input!.Email" autocomplete="username" style="@FieldStyle"/>
+    <label style="display:block;margin:16px 0 4px">Password</label>
+    <InputText type="password" @bind-Value="Input.Password" autocomplete="current-password" style="@FieldStyle"/>
+    @if (_error is not null)
+    {
+        <p style="color:#ff3f5f">@_error</p>
+    }
+    <button type="submit" style="margin-top:24px;width:100%;padding:10px;border:0;border-radius:4px;background:#7e6fff;color:#fff;font-size:1rem;cursor:pointer">Sign in</button>
+</EditForm>
+
+@code {
+    private const string FieldStyle = "width:100%;box-sizing:border-box;padding:8px;border-radius:4px;border:1px solid #33323e;background:#151521;color:#d4d2e0;font-size:1rem";
+
+    [SupplyParameterFromForm] private LoginModel? Input { get; set; }
+    [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
+    private string? _error;
+
+    protected override void OnInitialized() => Input ??= new();
+
+    private async Task SignInAsync()
+    {
+        var result = await SignInManager.PasswordSignInAsync(Input!.Email, Input.Password, isPersistent: false, lockoutOnFailure: true);
+        if (result.Succeeded)
+        {
+            Nav.NavigateTo(IsLocal(ReturnUrl) ? ReturnUrl! : "/admin", forceLoad: true);
+            return;
+        }
+
+        _error = result.IsLockedOut ? "Account temporarily locked. Try again later." : "Invalid email or password.";
+    }
+
+    private static bool IsLocal(string? url) =>
+        !string.IsNullOrEmpty(url) && url[0] == '/' && (url.Length == 1 || (url[1] != '/' && url[1] != '\\'));
+
+    private sealed class LoginModel
+    {
+        [Required, EmailAddress] public string Email { get; set; } = "";
+        [Required] public string Password { get; set; } = "";
+    }
+}
+
+

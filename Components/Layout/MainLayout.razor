@@ -1,0 +1,80 @@
+@inherits LayoutComponentBase
+@inject ProfileService Service
+
+<MudThemeProvider Theme="@_theme" @bind-IsDarkMode="_isDarkMode"/>
+<MudPopoverProvider/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudText Typo="Typo.h6" Class="mr-6">@_profile.Name</MudText>
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <MudButton Href="/" Color="Color.Inherit">Home</MudButton>
+            <MudButton Href="experience" Color="Color.Inherit">Experience</MudButton>
+            <MudButton Href="projects" Color="Color.Inherit">Projects</MudButton>
+            <MudButton Href="contact" Color="Color.Inherit">Contact</MudButton>
+            <AuthorizeView>
+                <MudButton Href="admin" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.AdminPanelSettings">Admin</MudButton>
+            </AuthorizeView>
+        </MudHidden>
+        <MudSpacer/>
+        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="@_profile.GitHubUrl" Target="_blank" aria-label="GitHub"/>
+        <MudIconButton Icon="@Icons.Custom.Brands.LinkedIn" Color="Color.Inherit" Href="@_profile.LinkedInUrl" Target="_blank" aria-label="LinkedIn"/>
+        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Outlined.LightMode : Icons.Material.Outlined.DarkMode)" Color="Color.Inherit" OnClick="@(() => _isDarkMode = !_isDarkMode)" aria-label="Toggle theme"/>
+        <AuthorizeView>
+            <form method="post" action="/logout" style="display:inline">
+                <MudTooltip Text="Sign out"><MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" ButtonType="ButtonType.Submit" aria-label="Sign out"/></MudTooltip>
+            </form>
+        </AuthorizeView>
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.End" OnClick="@(() => _drawerOpen = !_drawerOpen)" aria-label="Menu"/>
+        </MudHidden>
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" Anchor="Anchor.End" Variant="DrawerVariant.Temporary" Elevation="2">
+        <MudNavMenu>
+            <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home" OnClick="@(() => _drawerOpen = false)">Home</MudNavLink>
+            <MudNavLink Href="experience" Icon="@Icons.Material.Filled.Work" OnClick="@(() => _drawerOpen = false)">Experience</MudNavLink>
+            <MudNavLink Href="projects" Icon="@Icons.Material.Filled.Code" OnClick="@(() => _drawerOpen = false)">Projects</MudNavLink>
+            <MudNavLink Href="contact" Icon="@Icons.Material.Filled.Mail" OnClick="@(() => _drawerOpen = false)">Contact</MudNavLink>
+            <AuthorizeView>
+                <MudNavLink Href="admin" Icon="@Icons.Material.Filled.AdminPanelSettings" OnClick="@(() => _drawerOpen = false)">Admin</MudNavLink>
+            </AuthorizeView>
+        </MudNavMenu>
+    </MudDrawer>
+    <MudMainContent Class="pt-16">
+        <MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+    private SiteProfile _profile = new();
+    private bool _drawerOpen;
+
+    protected override async Task OnInitializedAsync() => _profile = await Service.GetProfileAsync();
+    private bool _isDarkMode = true;
+
+    private readonly MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight { Primary = "#5b4bd5", AppbarBackground = "rgba(255,255,255,0.85)", AppbarText = "#424242" },
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#7e6fff",
+            Surface = "#1e1e2d",
+            Background = "#1a1a27",
+            AppbarText = "#b2b0bf",
+            AppbarBackground = "rgba(26,26,39,0.85)",
+            DrawerBackground = "#1a1a27",
+            TextPrimary = "#d4d2e0",
+            TextSecondary = "#92929f",
+        },
+    };
+}
+
