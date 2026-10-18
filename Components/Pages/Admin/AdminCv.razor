@@ -1,0 +1,73 @@
+@page "/admin/cv"
+@attribute [Authorize]
+@inject ProfileService Service
+@inject ISnackbar Snackbar
+
+<PageTitle>Admin | CV</PageTitle>
+<MudText Typo="Typo.h3" HtmlTag="h1" GutterBottom>Admin</MudText>
+<AdminNav Active="CV"/>
+
+<MudPaper Class="pa-4" Elevation="2">
+    @if (_info is null)
+    {
+        <MudText Class="mb-3">No CV uploaded. The download buttons on the site are hidden until you upload one.</MudText>
+    }
+    else
+    {
+        <MudText Class="mb-1">Current CV: <b>@_info.FileName</b> (@(_info.SizeBytes / 1024) KB)</MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">Uploaded @_info.UploadedAt.ToString("dd MMM yyyy HH:mm") UTC</MudText>
+        <MudButton Href="cv" Target="_blank" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Download" Class="mr-2">View</MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Delete" OnClick="RemoveAsync">Remove</MudButton>
+        <MudDivider Class="my-4"/>
+    }
+
+    <MudFileUpload T="IBrowserFile" Accept=".pdf" FilesChanged="UploadAsync">
+        <CustomContent>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.UploadFile" OnClick="@context.OpenFilePickerAsync">
+                @(_info is null ? "Upload CV (PDF)" : "Replace CV (PDF)")
+            </MudButton>
+        </CustomContent>
+    </MudFileUpload>
+    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-2">PDF only, up to 5 MB.</MudText>
+</MudPaper>
+
+@code {
+    private const long MaxBytes = 5 * 1024 * 1024;
+    private CvInfo? _info;
+
+    protected override async Task OnInitializedAsync() => _info = await Service.GetCvInfoAsync();
+
+    private async Task UploadAsync(IBrowserFile? file)
+    {
+        if (file is null) return;
+        if (file.Size > MaxBytes)
+        {
+            Snackbar.Add("File is larger than 5 MB.", Severity.Error);
+            return;
+        }
+
+        using var ms = new MemoryStream();
+        await using (var stream = file.OpenReadStream(MaxBytes)) await stream.CopyToAsync(ms);
+        var data = ms.ToArray();
+
+        // Check the content, not just the extension
+        if (data.Length < 5 || data[0] != '%' || data[1] != 'P' || data[2] != 'D' || data[3] != 'F' || data[4] != '-')
+        {
+            Snackbar.Add("That doesn't look like a PDF.", Severity.Error);
+            return;
+        }
+
+        var name = Path.GetFileName(file.Name);
+        await Service.SetCvAsync(string.IsNullOrWhiteSpace(name) ? "cv.pdf" : name, data);
+        _info = await Service.GetCvInfoAsync();
+        Snackbar.Add("CV uploaded", Severity.Success);
+    }
+
+    private async Task RemoveAsync()
+    {
+        await Service.DeleteCvAsync();
+        _info = null;
+        Snackbar.Add("CV removed", Severity.Success);
+    }
+}
+

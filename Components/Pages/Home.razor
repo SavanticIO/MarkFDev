@@ -11,6 +11,10 @@
     <MudStack Row Spacing="2" Class="mt-2">
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="projects">View projects</MudButton>
         <MudButton Variant="Variant.Outlined" Color="Color.Primary" Href="contact">Get in touch</MudButton>
+        @if (_cv is not null)
+        {
+            <MudButton Variant="Variant.Text" Color="Color.Primary" Href="cv" Target="_blank" StartIcon="@Icons.Material.Filled.Download">Download CV</MudButton>
+        }
     </MudStack>
 </MudStack>
 
@@ -40,10 +44,13 @@
 @code {
     private SiteProfile _profile = new();
     private List<SkillGroup> _skills = [];
+    private CvInfo? _cv;
 
     protected override async Task OnInitializedAsync()
     {
         _profile = await Service.GetProfileAsync();
         _skills = await Service.GetSkillsAsync();
+        _cv = await Service.GetCvInfoAsync();
     }
 }
+

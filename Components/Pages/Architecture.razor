@@ -1,0 +1,89 @@
+@page "/architecture"
+@inject ProfileService Service
+
+<PageTitle>Architecture | @_profile.Name</PageTitle>
+
+<MudText Typo="Typo.h3" HtmlTag="h1" GutterBottom>How this site is built</MudText>
+<MudText Class="mb-6 mud-text-secondary">This site is a small production system rather than a template. Here is what runs it and why.</MudText>
+
+<MudPaper Class="pa-4 mb-6" Elevation="2" Style="overflow-x:auto">
+<pre style="margin:0;font-size:0.9rem;line-height:1.4">
+ Browser
+    | HTTPS (Let's Encrypt)
+    v
+ NGINX VPS ---- TLS termination, www/markf.io redirects, WebSocket proxy
+    | HTTP :8080 (firewalled to the NGINX server only)
+    v
+ App VPS ------ Docker: Blazor Server (.NET 10) + MudBlazor
+    | PostgreSQL over TLS, certificate verified (firewalled to the app server only)
+    v
+ Database VPS - Docker: PostgreSQL 17, data in a volume
+</pre>
+</MudPaper>
+
+<MudGrid>
+    @foreach (var s in Sections)
+    {
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="2" Style="height:100%">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" HtmlTag="h2" Color="Color.Primary">@s.Title</MudText>
+                    <ul class="ml-6 mt-2">
+                        @foreach (var point in s.Points)
+                        {
+                            <li><MudText Typo="Typo.body2">@point</MudText></li>
+                        }
+                    </ul>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    }
+</MudGrid>
+
+<MudText Typo="Typo.h5" HtmlTag="h2" Class="mt-8" GutterBottom>Trade-offs</MudText>
+<ul class="ml-6">
+    @foreach (var t in Tradeoffs)
+    {
+        <li><MudText Class="mb-1">@t</MudText></li>
+    }
+</ul>
+
+@code {
+    private record Section(string Title, string[] Points);
+
+    private SiteProfile _profile = new();
+
+    protected override async Task OnInitializedAsync() => _profile = await Service.GetProfileAsync();
+
+    private static readonly Section[] Sections =
+    [
+        new("Application", [
+            "Blazor Server with interactive rendering; MudBlazor for the UI and theming.",
+            "EF Core with the Npgsql provider; migrations are applied on startup.",
+            "All content (profile, skills, jobs, projects, CV PDF) is stored in PostgreSQL and edited from an admin area.",
+        ]),
+        new("Security", [
+            "ASP.NET Core Identity with cookie auth, 12+ character passwords and account lockout.",
+            "Admin pages require authorisation; the login page renders statically so it can set the cookie.",
+            "Data protection keys live in the database so sessions survive redeploys.",
+            "Database and app ports are firewalled to a single source each; DB traffic is TLS with certificate verification.",
+        ]),
+        new("Delivery", [
+            "GitHub Actions builds a Docker image, pushes it to GHCR and deploys over SSH with Docker Compose.",
+            "A smoke test hits the live site after each deploy.",
+            "Secrets live in GitHub Actions and in .env files on the servers, never in the repository.",
+        ]),
+        new("Infrastructure", [
+            "Three OVH VPSs: NGINX edge, application and database, so each layer can be secured and scaled on its own.",
+            "NGINX handles TLS and the WebSocket upgrade Blazor Server needs; certificates renew automatically with certbot.",
+            "markf.dev is canonical; markf.io and the www hosts redirect to it.",
+        ]),
+    ];
+
+    private static readonly string[] Tradeoffs =
+    [
+        "Blazor Server keeps all logic in C# and the client thin, but needs a live connection per visitor. That suits a portfolio's traffic; a high-traffic public site might prefer WebAssembly or static rendering.",
+        "Content in a database makes editing easy but adds an operational dependency, so backups matter. A static site would be simpler to run.",
+        "A single app instance keeps things simple. Scaling out would need sticky sessions or a Redis backplane for SignalR.",
+    ];
+}

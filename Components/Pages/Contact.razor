@@ -10,11 +10,21 @@
     <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="@($"mailto:{_profile.Email}")" StartIcon="@Icons.Material.Filled.Mail">@_profile.Email</MudButton>
     <MudButton Variant="Variant.Outlined" Href="@_profile.LinkedInUrl" Target="_blank" StartIcon="@Icons.Custom.Brands.LinkedIn">LinkedIn</MudButton>
     <MudButton Variant="Variant.Outlined" Href="@_profile.GitHubUrl" Target="_blank" StartIcon="@Icons.Custom.Brands.GitHub">GitHub</MudButton>
+    @if (_cv is not null)
+    {
+        <MudButton Variant="Variant.Outlined" Href="cv" Target="_blank" StartIcon="@Icons.Material.Filled.Download">Download CV</MudButton>
+    }
 </MudStack>
 
 @code {
     private SiteProfile _profile = new();
+    private CvInfo? _cv;
 
-    protected override async Task OnInitializedAsync() => _profile = await Service.GetProfileAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        _profile = await Service.GetProfileAsync();
+        _cv = await Service.GetCvInfoAsync();
+    }
 }
+
 

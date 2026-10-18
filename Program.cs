@@ -85,7 +85,14 @@ app.MapPost("/logout", async (HttpContext ctx) =>
     return Results.LocalRedirect("/");
 }).DisableAntiforgery();
 
+app.MapGet("/cv", async (ProfileService service) =>
+{
+    var cv = await service.GetCvAsync();
+    return cv is null ? Results.NotFound() : Results.File(cv.Data, "application/pdf", cv.FileName);
+});
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+

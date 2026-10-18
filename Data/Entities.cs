@@ -88,3 +88,10 @@ static class ListText
     private static List<string> Split(string? v, char sep) =>
         (v ?? "").Split(sep, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
 }
+
+public class CvDocument : Entity
+{
+    [MaxLength(200)] public string FileName { get; set; } = "cv.pdf";
+    public byte[] Data { get; set; } = [];
+    public DateTimeOffset UploadedAt { get; set; }
+}

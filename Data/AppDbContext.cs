@@ -12,5 +12,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<SkillGroup> SkillGroups => Set<SkillGroup>();
     public DbSet<Job> Jobs => Set<Job>();
     public DbSet<Project> Projects => Set<Project>();
+    public DbSet<CvDocument> CvDocuments => Set<CvDocument>();
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 }
+

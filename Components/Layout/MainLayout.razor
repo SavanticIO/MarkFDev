@@ -12,6 +12,7 @@
             <MudButton Href="/" Color="Color.Inherit">Home</MudButton>
             <MudButton Href="experience" Color="Color.Inherit">Experience</MudButton>
             <MudButton Href="projects" Color="Color.Inherit">Projects</MudButton>
+            <MudButton Href="architecture" Color="Color.Inherit">Architecture</MudButton>
             <MudButton Href="contact" Color="Color.Inherit">Contact</MudButton>
             <AuthorizeView>
                 <MudButton Href="admin" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.AdminPanelSettings">Admin</MudButton>
@@ -35,6 +36,7 @@
             <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home" OnClick="@(() => _drawerOpen = false)">Home</MudNavLink>
             <MudNavLink Href="experience" Icon="@Icons.Material.Filled.Work" OnClick="@(() => _drawerOpen = false)">Experience</MudNavLink>
             <MudNavLink Href="projects" Icon="@Icons.Material.Filled.Code" OnClick="@(() => _drawerOpen = false)">Projects</MudNavLink>
+            <MudNavLink Href="architecture" Icon="@Icons.Material.Filled.AccountTree" OnClick="@(() => _drawerOpen = false)">Architecture</MudNavLink>
             <MudNavLink Href="contact" Icon="@Icons.Material.Filled.Mail" OnClick="@(() => _drawerOpen = false)">Contact</MudNavLink>
             <AuthorizeView>
                 <MudNavLink Href="admin" Icon="@Icons.Material.Filled.AdminPanelSettings" OnClick="@(() => _drawerOpen = false)">Admin</MudNavLink>
@@ -77,4 +79,5 @@
         },
     };
 }
+
 
